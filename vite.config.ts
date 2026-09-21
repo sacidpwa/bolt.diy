@@ -19,7 +19,7 @@ export default defineConfig((config) => {
     server: {
       host: '0.0.0.0',
       port: 5173,
-      allowedHosts: 'all', // <-- ESTA ES LA LÍNEA QUE QUITA EL BLOQUEO
+      allowedHosts: true, // Allow all hosts in production (Railway, etc.)
     },
     build: {
       target: 'esnext',
