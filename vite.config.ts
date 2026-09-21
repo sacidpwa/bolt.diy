@@ -19,7 +19,7 @@ export default defineConfig((config) => {
     server: {
       host: '0.0.0.0',
       port: 5173,
-      allowedHosts: true, // <-- ESTA ES LA LÍNEA QUE QUITA EL BLOQUEO
+      allowedHosts: 'all', // <-- ESTA ES LA LÍNEA QUE QUITA EL BLOQUEO
     },
     build: {
       target: 'esnext',
