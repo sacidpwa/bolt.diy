@@ -16,6 +16,11 @@ export default defineConfig((config) => {
     define: {
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
     },
+    server: {
+      host: '0.0.0.0',
+      port: 5173,
+      allowedHosts: true, // <-- ESTA ES LA LÍNEA QUE QUITA EL BLOQUEO
+    },
     build: {
       target: 'esnext',
     },
