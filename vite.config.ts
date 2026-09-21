@@ -19,7 +19,11 @@ export default defineConfig((config) => {
     server: {
       host: '0.0.0.0',
       port: 5173,
-      allowedHosts: true, // Allow all hosts in production (Railway, etc.)
+      allowedHosts: [
+        'localhost',
+        '.railway.app',
+        'boltdiy-production-6a36.up.railway.app',
+      ],
     },
     build: {
       target: 'esnext',
