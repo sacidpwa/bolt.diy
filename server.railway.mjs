@@ -8,6 +8,9 @@ const CLIENT_DIR = path.join(__dirname, 'build', 'client');
 const PORT = process.env.PORT || 5173;
 const HOST = process.env.HOST || '0.0.0.0';
 
+console.log('📁 Serving from:', CLIENT_DIR);
+console.log('📂 Files:', fs.readdirSync(CLIENT_DIR).slice(0, 20));
+
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
   '.js':   'application/javascript; charset=utf-8',
@@ -15,62 +18,44 @@ const MIME_TYPES = {
   '.json': 'application/json',
   '.png':  'image/png',
   '.jpg':  'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.gif':  'image/gif',
   '.svg':  'image/svg+xml',
   '.ico':  'image/x-icon',
   '.woff': 'font/woff',
   '.woff2':'font/woff2',
   '.ttf':  'font/ttf',
-  '.eot':  'application/vnd.ms-fontobject',
   '.txt':  'text/plain; charset=utf-8',
-  '.xml':  'application/xml',
   '.webp': 'image/webp',
   '.map':  'application/json',
 };
 
-function serveFile(res, filePath) {
-  fs.readFile(filePath, (err, data) => {
-    if (err) return false;
-    const ext = path.extname(filePath).toLowerCase();
-    const mime = MIME_TYPES[ext] || 'application/octet-stream';
-    res.writeHead(200, { 'Content-Type': mime, 'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=31536000, immutable' });
-    res.end(data);
-    return true;
-  });
-}
-
 const server = http.createServer((req, res) => {
-  let urlPath = new URL(req.url, `http://${req.headers.host}`).pathname;
+  const urlPath = new URL(req.url, `http://${req.headers.host}`).pathname;
 
-  // Remove leading slash
-  let filePath = path.join(CLIENT_DIR, urlPath);
+  // Try to find the file in build/client
+  const tryPaths = [
+    path.join(CLIENT_DIR, urlPath),
+    path.join(CLIENT_DIR, urlPath + '.html'),
+    path.join(CLIENT_DIR, 'index.html'),
+  ];
 
-  // Try exact file first
-  fs.stat(filePath, (err, stats) => {
-    if (!err && stats.isFile()) {
-      return serveFile(res, filePath);
-    }
-
-    // Try with .html extension
-    const htmlPath = filePath + '.html';
-    fs.stat(htmlPath, (err2, stats2) => {
-      if (!err2 && stats2.isFile()) {
-        return serveFile(res, htmlPath);
+  for (const tryPath of tryPaths) {
+    try {
+      if (fs.existsSync(tryPath) && fs.statSync(tryPath).isFile()) {
+        const data = fs.readFileSync(tryPath);
+        const ext = path.extname(tryPath).toLowerCase();
+        const mime = MIME_TYPES[ext] || 'application/octet-stream';
+        const cache = ext === '.html' ? 'no-cache' : 'public, max-age=31536000, immutable';
+        res.writeHead(200, { 'Content-Type': mime, 'Cache-Control': cache });
+        res.end(data);
+        return;
       }
+    } catch (e) {
+      console.error('Error reading:', tryPath, e.message);
+    }
+  }
 
-      // SPA fallback - serve index.html
-      const indexPath = path.join(CLIENT_DIR, 'index.html');
-      fs.stat(indexPath, (err3) => {
-        if (!err3) {
-          return serveFile(res, indexPath);
-        }
-
-        res.writeHead(404, { 'Content-Type': 'text/plain' });
-        res.end('Not Found');
-      });
-    });
-  });
+  res.writeHead(404, { 'Content-Type': 'text/plain' });
+  res.end('Not Found');
 });
 
 server.listen(PORT, HOST, () => {
